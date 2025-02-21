@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>J PhotoBooth</title>
+    <link rel="stylesheet" href="MobilePhotoBooth.css">
+</head>
+<body>
+    <div id="main-container">
+        <!-- Webcam Container -->
+        <div id="container">
+            <video autoplay="true" id="webCam"></video>
+            <div class="button-container">
+                <button id="camera-snap">Snap</button>
+                <button id="downloadBtn">Download</button>
+            </div>
+        </div>
+
+        <!-- Snapshot Preview Area -->
+        <div id="container-copy">
+            <canvas id="canvas1" width="525" height="360"></canvas>
+            <canvas id="canvas2" width="525" height="360"></canvas>
+            <canvas id="canvas3" width="525" height="360"></canvas>
+        </div>
+    </div>
+
+    <!-- Webcam Setup -->
+    <script>
+        let video = document.querySelector("#webCam");
+
+        if (navigator.mediaDevices.getUserMedia) {
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then(function(stream) {
+                    video.srcObject = stream;
+                })
+                .catch(function(error) {
+                    console.log("Something went wrong:", error);
+                });
+        } else {
+            console.log("getUserMedia not supported");
+        }
+    </script>
+
+    <!-- Snapshot Functionality -->
+    <script>
+        let take_snapshot = document.querySelector("#camera-snap");
+        let canvas1 = document.querySelector("#canvas1");
+        let canvas2 = document.querySelector("#canvas2");
+        let canvas3 = document.querySelector("#canvas3");
+
+        take_snapshot.addEventListener("click", function () {
+            let ctx1 = canvas1.getContext('2d');
+            let ctx2 = canvas2.getContext('2d');
+            let ctx3 = canvas3.getContext('2d');
+
+            // Shift snapshots down
+            ctx3.drawImage(canvas2, 0, 0, canvas3.width, canvas3.height);
+            ctx2.drawImage(canvas1, 0, 0, canvas2.width, canvas2.height);
+            ctx1.drawImage(video, 0, 0, canvas1.width, canvas1.height);
+        });
+    </script>
+
+    <!-- Download Image -->
+    <script>
+        function downloadCanvasImages() {
+            let mergedCanvas = document.createElement("canvas");
+            let ctx = mergedCanvas.getContext("2d");
+
+            let canvas1 = document.getElementById("canvas1");
+            let canvas2 = document.getElementById("canvas2");
+            let canvas3 = document.getElementById("canvas3");
+
+            mergedCanvas.width = 525;
+            mergedCanvas.height = 400 * 3;
+
+            ctx.fillStyle = "plum";
+            ctx.fillRect(0, 0, mergedCanvas.width, mergedCanvas.height);
+
+            // Draw snapshots onto the merged canvas
+            ctx.drawImage(canvas1, 0, 0, 525, 360);
+            ctx.drawImage(canvas2, 0, 360, 525, 360);
+            ctx.drawImage(canvas3, 0, 720, 525, 360);
+
+            ctx.strokeStyle = "plum";
+            ctx.lineWidth = 20;
+            ctx.strokeRect(0, 0, mergedCanvas.width, mergedCanvas.height);
+
+            ctx.fillStyle = "black"; 
+            ctx.font = "italic bold 20px Poppins";
+            ctx.textAlign = "center"; 
+            ctx.fillText("~ J PhotoBooth ~", mergedCanvas.width / 2, mergedCanvas.height - 50);
+
+            let formattedDate = new Date().toLocaleDateString('en-US', {
+                month: 'long', day: 'numeric', year: 'numeric'
+            });
+
+            ctx.font = "12px Arial";
+            ctx.fillText(formattedDate, mergedCanvas.width / 2, mergedCanvas.height - 25);
+
+            // Convert to an image and download
+            let link = document.createElement("a");
+            link.href = mergedCanvas.toDataURL("image/png");
+            link.download = "PhotoBooth.png";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        document.getElementById("downloadBtn").addEventListener("click", downloadCanvasImages);
+    </script>
+</body>
+</html>
